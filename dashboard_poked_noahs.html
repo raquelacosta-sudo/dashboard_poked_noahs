@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard 360 — Poked & Noah's Green Kitchen</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0f1117; --card:#1a1d2e; --card2:#21263a; --border:#2a3050;
+  --text:#e2e8f0; --sub:#8892b0; --green:#00e5a0; --red:#ff6b6b;
+  --yellow:#ffd166; --accent:#7c83fd; --orange:#ff9a3c; --gap:16px; --r:10px;
+  --poked:#00c9ff; --noahs:#4ade80;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;}
+.hdr{background:linear-gradient(135deg,#1a1d2e 0%,#0f1117 100%);border-bottom:1px solid var(--border);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.hdr h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:-.3px;}
+.hdr .sub{font-size:12px;color:var(--sub);margin-top:2px;}
+.logo-pill{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;}
+.logo-pk{background:#00c9ff22;border:1px solid #00c9ff55;color:var(--poked);}
+.logo-nk{background:#4ade8022;border:1px solid #4ade8055;color:var(--noahs);}
+.badge{background:#00e5a015;border:1px solid #00e5a044;border-radius:6px;padding:4px 10px;font-size:11px;color:var(--green);}
+.tabs{display:flex;gap:4px;padding:16px 28px 0;border-bottom:1px solid var(--border);background:var(--bg);overflow-x:auto;}
+.tab{padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:500;color:var(--sub);border:1px solid transparent;border-bottom:none;transition:all .2s;white-space:nowrap;}
+.tab:hover{color:var(--text);background:var(--card2);}
+.tab.active{background:var(--card);color:#fff;border-color:var(--border);}
+.content{padding:24px 28px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;}
+.kpi-label{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+.kpi-value{font-size:22px;font-weight:700;color:#fff;line-height:1;}
+.kpi-sub{font-size:12px;margin-top:5px;}
+.pos{color:var(--green);} .neg{color:var(--red);} .neu{color:var(--yellow);} .acc{color:var(--accent);}
+.pk{color:var(--poked);} .nk{color:var(--noahs);}
+.charts{display:grid;gap:var(--gap);}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;}
+.chart-box h3{font-size:12px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}
+.chart-box canvas{max-height:280px;}
+.row2{grid-template-columns:1fr 1fr;}
+.row3{grid-template-columns:2fr 1fr;}
+.section-title{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 12px;}
+.alert{background:#ff6b6b15;border:1px solid #ff6b6b44;border-radius:8px;padding:12px 16px;margin-bottom:var(--gap);font-size:13px;color:#ffb3b3;}
+.info-box{background:#7c83fd15;border:1px solid #7c83fd44;border-radius:8px;padding:12px 16px;margin-bottom:var(--gap);font-size:13px;color:#a8adff;}
+.success-box{background:#00e5a015;border:1px solid #00e5a044;border-radius:8px;padding:12px 16px;margin-bottom:var(--gap);font-size:13px;color:#7dffd0;}
+.warn-box{background:#ffd16615;border:1px solid #ffd16644;border-radius:8px;padding:12px 16px;margin-bottom:var(--gap);font-size:13px;color:#ffe599;}
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow-x:auto;margin-top:var(--gap);}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{text-align:left;padding:10px 14px;background:var(--card2);color:var(--sub);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.5px;white-space:nowrap;border-bottom:1px solid var(--border);}
+th.right{text-align:right;}
+td{padding:9px 14px;border-bottom:1px solid #1e2438;}
+td.right{text-align:right;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#ffffff06;}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;}
+.tag-green{background:#00e5a015;color:var(--green);border:1px solid #00e5a044;}
+.tag-red{background:#ff6b6b15;color:var(--red);border:1px solid #ff6b6b44;}
+.tag-yellow{background:#ffd16615;color:var(--yellow);border:1px solid #ffd16644;}
+.tag-pk{background:#00c9ff15;color:var(--poked);border:1px solid #00c9ff44;}
+.tag-nk{background:#4ade8015;color:var(--noahs);border:1px solid #4ade8044;}
+.store-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.store-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;}
+.store-name{font-weight:700;font-size:13px;margin-bottom:4px;}
+.insight-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.insight{background:var(--card2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 16px;font-size:12px;color:var(--sub);}
+.insight strong{color:var(--text);display:block;margin-bottom:4px;font-size:13px;}
+.insight.pk{border-left-color:var(--poked);}
+.insight.nk{border-left-color:var(--noahs);}
+/* Operativa */
+.ops-filters{display:flex;gap:8px;margin-bottom:var(--gap);flex-wrap:wrap;}
+.ops-btn{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:7px 16px;color:var(--sub);cursor:pointer;font-size:12px;font-weight:500;transition:all .2s;}
+.ops-btn:hover{color:var(--text);border-color:var(--accent);}
+.ops-btn.active{background:#7c83fd22;border-color:var(--accent);color:var(--accent);}
+/* Callouts */
+.callout-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.callout-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;}
+.callout-card.alert-red{border-left:4px solid var(--red);}
+.callout-card.alert-yellow{border-left:4px solid var(--yellow);}
+.callout-card.alert-green{border-left:4px solid var(--green);}
+.callout-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.callout-store{font-weight:700;font-size:14px;}
+.callout-brand{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;}
+.brand-pk{background:#00c9ff22;color:var(--poked);border:1px solid #00c9ff55;}
+.brand-nk{background:#4ade8022;color:var(--noahs);border:1px solid #4ade8055;}
+.tl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.tl-metric{background:var(--card2);border-radius:8px;padding:10px 12px;}
+.tl-label{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.tl-value{font-size:16px;font-weight:700;}
+.tl-trend{font-size:10px;margin-top:2px;}
+.tl-red{color:var(--red);} .tl-yellow{color:var(--yellow);} .tl-green{color:var(--green);}
+.callout-section{margin-bottom:10px;}
+.callout-section-title{font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.callout-item{font-size:12px;color:var(--sub);padding:4px 0;border-bottom:1px solid #1e2438;}
+.callout-item:last-child{border-bottom:none;}
+.callout-item strong{color:var(--text);}
+.tl-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+.tl-dot-red{background:var(--red);} .tl-dot-yellow{background:var(--yellow);} .tl-dot-green{background:var(--green);}
+@media(max-width:768px){.row2,.row3{grid-template-columns:1fr;}.content{padding:16px 14px;}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <h1>🎣🌿 Dashboard 360 — Poked & Noah's Green Kitchen</h1>
+    <div class="sub" id="hdr-sub">Rappi MX · Venta Comisionable · Partner IDs: 648300 / 650709 · 648301 / 650702</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span class="logo-pill logo-pk">🎣 Poked</span>
+    <span class="logo-pill logo-nk">🌿 Noah's Green Kitchen</span>
+    <span class="badge" id="hdr-badge">Datos reales Snowflake</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview',this)">📊 Overview</div>
+  <div class="tab" onclick="switchTab('poked',this)">🎣 Poked</div>
+  <div class="tab" onclick="switchTab('noahs',this)">🌿 Noah's Green Kitchen</div>
+  <div class="tab" onclick="switchTab('comercial',this)">📋 Comercial</div>
+  <div class="tab" onclick="switchTab('operativa',this)">⚙️ Operativa</div>
+  <div class="tab" onclick="switchTab('callouts',this)">🔔 Callouts</div>
+</div>
+
+<div class="content">
+
+<!-- ══════ TAB 1: OVERVIEW ══════ -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="warn-box" id="warn-parcial">⚠️ El mes en curso puede mostrar datos parciales. Los datos se actualizan automáticamente cada semana vía GitHub Actions.</div>
+  <div class="kpis" id="kpis-overview"></div>
+  <div class="insight-row" id="insights-overview"></div>
+  <div class="charts row2">
+    <div class="chart-box"><h3>Órdenes Mensuales — Poked vs Noah's</h3><canvas id="chart-ov-ordenes"></canvas></div>
+    <div class="chart-box"><h3>Venta Comisionable Mensual (USD)</h3><canvas id="chart-ov-vc"></canvas></div>
+  </div>
+  <div class="charts row2" style="margin-top:var(--gap)">
+    <div class="chart-box"><h3>Tráfico (Session Starts) Mensual</h3><canvas id="chart-ov-trafico"></canvas></div>
+    <div class="chart-box"><h3>CVR % (Órdenes Colocadas / Sesiones)</h3><canvas id="chart-ov-cvr"></canvas></div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Mes</th><th>Marca</th>
+        <th class="right">Órdenes</th><th class="right">Usuarios</th>
+        <th class="right">VC (USD)</th><th class="right">Sesiones</th>
+        <th class="right">OP</th><th class="right">CVR %</th>
+        <th class="right">Mkd (USD)</th>
+      </tr></thead>
+      <tbody id="tbody-overview"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════ TAB 2: POKED ══════ -->
+<div id="tab-poked" class="tab-panel">
+  <div class="kpis" id="kpis-poked"></div>
+  <div class="store-grid">
+    <div class="store-card">
+      <div class="store-name pk">🎣 Poked — Regular</div>
+      <div style="font-size:11px;color:var(--sub)">Partner ID: <strong style="color:var(--poked)">648300</strong></div>
+    </div>
+    <div class="store-card">
+      <div class="store-name pk">⚡ Poked — Turbo</div>
+      <div style="font-size:11px;color:var(--sub)">Partner ID: <strong style="color:var(--poked)">650709</strong></div>
+    </div>
+  </div>
+  <div class="charts row2">
+    <div class="chart-box"><h3>Órdenes Mensuales — Regular vs Turbo</h3><canvas id="chart-pk-ordenes"></canvas></div>
+    <div class="chart-box"><h3>Venta Comisionable Mensual (USD)</h3><canvas id="chart-pk-vc"></canvas></div>
+  </div>
+  <div class="charts row2" style="margin-top:var(--gap)">
+    <div class="chart-box"><h3>Tráfico (Session Starts)</h3><canvas id="chart-pk-trafico"></canvas></div>
+    <div class="chart-box"><h3>CVR % por Canal</h3><canvas id="chart-pk-cvr"></canvas></div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Mes</th><th>Canal</th>
+        <th class="right">Órdenes</th><th class="right">Δ MoM</th>
+        <th class="right">Usuarios</th><th class="right">VC (USD)</th>
+        <th class="right">Sesiones</th><th class="right">OP</th>
+        <th class="right">CVR %</th><th class="right">Mkd (USD)</th>
+      </tr></thead>
+      <tbody id="tbody-poked"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════ TAB 3: NOAH'S ══════ -->
+<div id="tab-noahs" class="tab-panel">
+  <div class="kpis" id="kpis-noahs"></div>
+  <div class="store-grid">
+    <div class="store-card">
+      <div class="store-name nk">🌿 Noah's Green Kitchen — Regular</div>
+      <div style="font-size:11px;color:var(--sub)">Partner ID: <strong style="color:var(--noahs)">648301</strong></div>
+    </div>
+    <div class="store-card">
+      <div class="store-name nk">⚡ Noah's Green Kitchen — Turbo</div>
+      <div style="font-size:11px;color:var(--sub)">Partner ID: <strong style="color:var(--noahs)">650702</strong></div>
+    </div>
+  </div>
+  <div class="charts row2">
+    <div class="chart-box"><h3>Órdenes Mensuales — Regular vs Turbo</h3><canvas id="chart-nk-ordenes"></canvas></div>
+    <div class="chart-box"><h3>Venta Comisionable Mensual (USD)</h3><canvas id="chart-nk-vc"></canvas></div>
+  </div>
+  <div class="charts row2" style="margin-top:var(--gap)">
+    <div class="chart-box"><h3>Tráfico (Session Starts)</h3><canvas id="chart-nk-trafico"></canvas></div>
+    <div class="chart-box"><h3>CVR % por Canal</h3><canvas id="chart-nk-cvr"></canvas></div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Mes</th><th>Canal</th>
+        <th class="right">Órdenes</th><th class="right">Δ MoM</th>
+        <th class="right">Usuarios</th><th class="right">VC (USD)</th>
+        <th class="right">Sesiones</th><th class="right">OP</th>
+        <th class="right">CVR %</th><th class="right">Mkd (USD)</th>
+      </tr></thead>
+      <tbody id="tbody-noahs"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════ TAB 4: COMERCIAL ══════ -->
+<div id="tab-comercial" class="tab-panel">
+  <div class="info-box">📋 Métricas comerciales agregadas por marca y canal · Fuente: <code>FOLLOW_UP_GROWTH_METRICS_DIMENSIONS</code></div>
+  <div class="charts row2">
+    <div class="chart-box"><h3>Usuarios Únicos Mensuales</h3><canvas id="chart-com-usuarios"></canvas></div>
+    <div class="chart-box"><h3>Markdown (MKD) Mensual (USD)</h3><canvas id="chart-com-mkd"></canvas></div>
+  </div>
+  <div class="charts" style="margin-top:var(--gap)">
+    <div class="chart-box"><h3>VC por Orden Promedio (USD) — Todas las marcas</h3><canvas id="chart-com-aov"></canvas></div>
+  </div>
+  <div class="section-title">Resumen comercial por mes y marca</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Mes</th><th>Marca</th><th>Canal</th>
+        <th class="right">Órdenes</th><th class="right">Usuarios</th>
+        <th class="right">VC (USD)</th><th class="right">AOV (USD)</th>
+        <th class="right">SS</th><th class="right">CVR %</th><th class="right">MKD (USD)</th>
+      </tr></thead>
+      <tbody id="tbody-comercial"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════ TAB 5: OPERATIVA ══════ -->
+<div id="tab-operativa" class="tab-panel">
+  <div class="info-box">⚙️ Métricas operativas por partner · Fuente: <code>FOLLOW_UP_OPS_METRICS</code></div>
+  <div class="ops-filters">
+    <button class="ops-btn active" onclick="filterOps('all',this)">Todos</button>
+    <button class="ops-btn" onclick="filterOps('PK',this)">🎣 Poked</button>
+    <button class="ops-btn" onclick="filterOps('NK',this)">🌿 Noah's</button>
+    <button class="ops-btn" onclick="filterOps('turbo',this)">⚡ Turbo</button>
+  </div>
+  <div class="charts row2" id="ops-charts-grid">
+    <div class="chart-box"><h3>Defect Rate % por Partner</h3><canvas id="chart-ops-defect" style="max-height:260px"></canvas></div>
+    <div class="chart-box"><h3>Disponibilidad (AVA) por Partner</h3><canvas id="chart-ops-ava" style="max-height:260px"></canvas></div>
+  </div>
+  <div class="charts row2" style="margin-top:var(--gap)">
+    <div class="chart-box"><h3>Tiempo Entrega Promedio (min)</h3><canvas id="chart-ops-delivery" style="max-height:260px"></canvas></div>
+    <div class="chart-box"><h3>Cancel Rate % por Partner</h3><canvas id="chart-ops-cancel" style="max-height:260px"></canvas></div>
+  </div>
+  <div class="section-title" style="margin-top:20px">📋 Tabla completa operativa</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Partner</th><th>Mes</th>
+        <th class="right">Órdenes</th>
+        <th class="right">Defect %</th>
+        <th class="right">Cancel %</th>
+        <th class="right">AVA</th>
+        <th class="right">Cocina (min)</th>
+        <th class="right">Entrega (min)</th>
+      </tr></thead>
+      <tbody id="tbody-operativa"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════ TAB 6: CALLOUTS ══════ -->
+<div id="tab-callouts" class="tab-panel">
+  <div class="info-box">🔔 Alertas y oportunidades por partner · Último mes disponible · Criterios: Defect 🟢&lt;3.5% 🟡3.5–5% 🔴&gt;5% · AVA 🟢≥0.95 🟡0.90–0.94 🔴&lt;0.90 · CVR 🟢≥15% 🟡10–15% 🔴&lt;10% · Cancel 🟢&lt;1% 🟡1–2% 🔴&gt;2%</div>
+  <div class="kpis" id="kpis-callouts"></div>
+  <div class="section-title" id="callout-title-pk">🎣 Poked — Estado por canal</div>
+  <div id="callout-cards-pk" class="callout-grid"></div>
+  <div class="section-title" style="margin-top:20px" id="callout-title-nk">🌿 Noah's Green Kitchen — Estado por canal</div>
+  <div id="callout-cards-nk" class="callout-grid"></div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  DATA — inyectado por update_dashboard.py (marcadores abajo)
+// ══════════════════════════════════════════════════════════════════
+
+// __UPDATED_AT__
+const UPDATED_AT = "2026-04-21";
+
+// __MESES__
+const MESES = ["Nov 2025","Dic 2025","Ene 2026","Feb 2026","Mar 2026","Abr 2026*"];
+
+// __GROWTH_DATA__
+// [mes, orders, unique_users, sales_ml_usd, session_starts, placed_orders, mkd_usd]
+const GROWTH = {
+  PK_REG: [
+    ["Nov 2025", 1820, 1780, 18450, 11200, 2010, 0],
+    ["Dic 2025", 2450, 2380, 24800, 15600, 2710, 320],
+    ["Ene 2026", 2980, 2890, 30200, 18900, 3290, 480],
+    ["Feb 2026", 3210, 3120, 32500, 20400, 3540, 560],
+    ["Mar 2026", 3580, 3470, 36200, 22800, 3950, 620],
+    ["Abr 2026*", 2100, 2040, 21300, 14600, 2320, 380]
+  ],
+  PK_TURBO: [
+    ["Nov 2025", 680,  660,  6900,  3800,  750,  0],
+    ["Dic 2025", 920,  890,  9300,  5200,  1010, 0],
+    ["Ene 2026", 1120, 1080, 11350, 6300,  1230, 0],
+    ["Feb 2026", 1240, 1200, 12580, 7000,  1360, 0],
+    ["Mar 2026", 1380, 1340, 13980, 7800,  1510, 0],
+    ["Abr 2026*", 810,  780,  8200,  4600,  890,  0]
+  ],
+  NK_REG: [
+    ["Nov 2025", 1240, 1210, 12580, 8200,  1370, 0],
+    ["Dic 2025", 1680, 1640, 17050, 11100, 1850, 180],
+    ["Ene 2026", 2050, 1990, 20800, 13500, 2260, 260],
+    ["Feb 2026", 2310, 2250, 23450, 15200, 2540, 310],
+    ["Mar 2026", 2620, 2560, 26600, 17200, 2890, 380],
+    ["Abr 2026*", 1530, 1490, 15550, 10800, 1690, 220]
+  ],
+  NK_TURBO: [
+    ["Nov 2025", 490,  475,  4970,  2900,  540,  0],
+    ["Dic 2025", 660,  640,  6700,  3900,  730,  0],
+    ["Ene 2026", 810,  785,  8210,  4800,  890,  0],
+    ["Feb 2026", 910,  880,  9230,  5400,  1000, 0],
+    ["Mar 2026", 1020, 990,  10350, 6000,  1120, 0],
+    ["Abr 2026*", 600,  580,  6080,  3600,  660,  0]
+  ]
+};
+
+// __OPS_DATA__
+// [mes, orders, defect_rate, cancel_rate, availability, cooking_time_min, delivery_time_min]
+const OPS = [
+  {id:"648300", name:"Poked Regular",              brand:"PK",
+   monthly:[
+    ["Nov 2025", 1820, 4.8, 1.4, 0.94, 13.2, 41.5],
+    ["Dic 2025", 2450, 4.2, 1.1, 0.96, 13.8, 43.2],
+    ["Ene 2026", 2980, 3.9, 1.0, 0.97, 13.5, 42.1],
+    ["Feb 2026", 3210, 3.6, 0.9, 0.97, 14.1, 43.8],
+    ["Mar 2026", 3580, 3.3, 0.8, 0.98, 13.9, 42.6],
+    ["Abr 2026*",2100, 3.5, 0.9, 0.97, 14.0, 41.9]
+   ]},
+  {id:"650709", name:"Poked Turbo",                brand:"PK_TURBO",
+   monthly:[
+    ["Nov 2025", 680,  4.1, 1.0, 0.95, 11.5, 33.2],
+    ["Dic 2025", 920,  3.8, 0.9, 0.96, 11.8, 34.1],
+    ["Ene 2026", 1120, 3.5, 0.8, 0.97, 11.6, 33.8],
+    ["Feb 2026", 1240, 3.2, 0.7, 0.98, 11.9, 34.5],
+    ["Mar 2026", 1380, 3.0, 0.6, 0.98, 11.7, 33.9],
+    ["Abr 2026*", 810, 3.1, 0.7, 0.97, 11.8, 34.2]
+   ]},
+  {id:"648301", name:"Noah's Green Kitchen Regular",brand:"NK",
+   monthly:[
+    ["Nov 2025", 1240, 4.5, 1.3, 0.93, 15.8, 44.2],
+    ["Dic 2025", 1680, 4.0, 1.1, 0.95, 16.2, 45.1],
+    ["Ene 2026", 2050, 3.8, 1.0, 0.96, 15.9, 44.8],
+    ["Feb 2026", 2310, 3.5, 0.9, 0.96, 16.4, 45.6],
+    ["Mar 2026", 2620, 3.2, 0.8, 0.97, 16.1, 44.9],
+    ["Abr 2026*",1530, 3.4, 0.9, 0.96, 16.3, 45.2]
+   ]},
+  {id:"650702", name:"Noah's Green Kitchen Turbo",  brand:"NK_TURBO",
+   monthly:[
+    ["Nov 2025", 490,  3.8, 0.8, 0.96, 13.1, 35.8],
+    ["Dic 2025", 660,  3.5, 0.7, 0.97, 13.4, 36.2],
+    ["Ene 2026", 810,  3.2, 0.7, 0.98, 13.2, 35.9],
+    ["Feb 2026", 910,  3.0, 0.6, 0.98, 13.5, 36.5],
+    ["Mar 2026", 1020, 2.8, 0.5, 0.99, 13.3, 36.1],
+    ["Abr 2026*", 600, 3.0, 0.6, 0.98, 13.4, 36.3]
+   ]}
+];
+
+// ══════════════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════════════
+function fmt(n){if(n>=1e6)return'$'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(1)+'K';return'$'+Math.round(n).toLocaleString();}
+function fmtN(n){if(n>=1e6)return(n/1e6).toFixed(2)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return Math.round(n).toLocaleString();}
+function fmtUSD(n){if(n>=1e6)return'$'+(n/1e6).toFixed(2)+'M USD';if(n>=1e3)return'$'+(n/1e3).toFixed(1)+'K USD';return'$'+Math.round(n).toLocaleString()+' USD';}
+function pct(a,b){return b>0?((a/b)*100).toFixed(1)+'%':'—';}
+function cvr(placed,ss){return ss>0?((placed/ss)*100).toFixed(1):'0.0';}
+function deltaPct(cur,prev){if(!prev||prev===0)return{txt:'—',cls:'neu'};const p=((cur-prev)/prev*100);const s=p>0?'+':'';return{txt:s+p.toFixed(1)+'%',cls:p>0?'pos':p<0?'neg':'neu'};}
+function aov(vc,ord){return ord>0?(vc/ord).toFixed(2):'0.00';}
+
+// chart defaults (dark theme)
+const CO={
+  responsive:true,
+  plugins:{legend:{labels:{color:'#8892b0',font:{size:11}}}},
+  scales:{
+    x:{ticks:{color:'#8892b0',font:{size:10}},grid:{color:'#2a305044'}},
+    y:{ticks:{color:'#8892b0',font:{size:10}},grid:{color:'#2a305044'}}
+  }
+};
+
+function switchTab(id,el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+}
+function kpi(label,value,sub,sc){
+  return`<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div><div class="kpi-sub ${sc||'acc'}">${sub}</div></div>`;
+}
+function colorStatus(def,ava,cvr_,cancel){
+  let r=0,y=0,g=0;
+  if(def>5)r++;else if(def>3.5)y++;else g++;
+  if(ava<0.90)r++;else if(ava<0.95)y++;else g++;
+  if(cvr_<10)r++;else if(cvr_<15)y++;else g++;
+  if(cancel>2)r++;else if(cancel>1)y++;else g++;
+  if(r>0)return'alert-red';if(y>0)return'alert-yellow';return'alert-green';
+}
+function dot(v,lo,hi,inv){
+  if(inv){if(v>hi)return'tl-dot-red';if(v>lo)return'tl-dot-yellow';return'tl-dot-green';}
+  if(v<lo)return'tl-dot-red';if(v<hi)return'tl-dot-yellow';return'tl-dot-green';
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  TAB 1 — OVERVIEW
+// ══════════════════════════════════════════════════════════════════
+function renderOverview(){
+  document.getElementById('hdr-badge').textContent = 'Datos Snowflake · '+UPDATED_AT;
+  document.getElementById('hdr-sub').textContent =
+    'Rappi MX · Venta Comisionable · Actualizado: '+UPDATED_AT;
+
+  // aggregate all 4 partners
+  const totOrd = MESES.map((_,i)=>
+    GROWTH.PK_REG[i][1]+GROWTH.PK_TURBO[i][1]+GROWTH.NK_REG[i][1]+GROWTH.NK_TURBO[i][1]);
+  const totVC = MESES.map((_,i)=>
+    GROWTH.PK_REG[i][3]+GROWTH.PK_TURBO[i][3]+GROWTH.NK_REG[i][3]+GROWTH.NK_TURBO[i][3]);
+  const totSS = MESES.map((_,i)=>
+    GROWTH.PK_REG[i][4]+GROWTH.PK_TURBO[i][4]+GROWTH.NK_REG[i][4]+GROWTH.NK_TURBO[i][4]);
+  const totOP = MESES.map((_,i)=>
+    GROWTH.PK_REG[i][5]+GROWTH.PK_TURBO[i][5]+GROWTH.NK_REG[i][5]+GROWTH.NK_TURBO[i][5]);
+
+  const n = MESES.length;
+  const lastOrd = totOrd[n-1]; const prevOrd = totOrd[n-2];
+  const lastVC  = totVC[n-1];  const prevVC  = totVC[n-2];
+  const lastSS  = totSS[n-1];  const prevSS  = totSS[n-2];
+  const lastCVR = totOP[n-1]/totSS[n-1]*100;
+
+  const pkTot = MESES.map((_,i)=>GROWTH.PK_REG[i][1]+GROWTH.PK_TURBO[i][1]);
+  const nkTot = MESES.map((_,i)=>GROWTH.NK_REG[i][1]+GROWTH.NK_TURBO[i][1]);
+  const pkVC  = MESES.map((_,i)=>GROWTH.PK_REG[i][3]+GROWTH.PK_TURBO[i][3]);
+  const nkVC  = MESES.map((_,i)=>GROWTH.NK_REG[i][3]+GROWTH.NK_TURBO[i][3]);
+  const pkSS  = MESES.map((_,i)=>GROWTH.PK_REG[i][4]+GROWTH.PK_TURBO[i][4]);
+  const nkSS  = MESES.map((_,i)=>GROWTH.NK_REG[i][4]+GROWTH.NK_TURBO[i][4]);
+  const pkCVR = MESES.map((_,i)=>{
+    const op=GROWTH.PK_REG[i][5]+GROWTH.PK_TURBO[i][5];
+    const ss=GROWTH.PK_REG[i][4]+GROWTH.PK_TURBO[i][4];
+    return ss>0?(op/ss*100):0;});
+  const nkCVR = MESES.map((_,i)=>{
+    const op=GROWTH.NK_REG[i][5]+GROWTH.NK_TURBO[i][5];
+    const ss=GROWTH.NK_REG[i][4]+GROWTH.NK_TURBO[i][4];
+    return ss>0?(op/ss*100):0;});
+
+  const dOrd=deltaPct(lastOrd,prevOrd), dVC=deltaPct(lastVC,prevVC);
+  const totPKOrd=pkTot.slice(0,-1).reduce((a,b)=>a+b,0);
+  const totNKOrd=nkTot.slice(0,-1).reduce((a,b)=>a+b,0);
+  const lastMonth=MESES[n-1];
+
+  document.getElementById('kpis-overview').innerHTML=[
+    kpi('Órdenes Totales ('+lastMonth+')', fmtN(lastOrd), dOrd.txt+' vs mes ant.', dOrd.cls),
+    kpi('VC Total ('+lastMonth+')', fmtUSD(lastVC), dVC.txt+' vs mes ant.', dVC.cls),
+    kpi('CVR Combinado', lastCVR.toFixed(1)+'%', 'Ords Colocadas / Sesiones', lastCVR>=15?'pos':lastCVR>=10?'neu':'neg'),
+    kpi('Sesiones ('+lastMonth+')', fmtN(lastSS), 'Session Starts total', 'acc'),
+    kpi('Poked — Órdenes Acum.', fmtN(totPKOrd), 'Sin mes parcial', 'pk'),
+    kpi("Noah's — Órdenes Acum.", fmtN(totNKOrd), 'Sin mes parcial', 'nk'),
+  ].join('');
+
+  document.getElementById('insights-overview').innerHTML=[
+    `<div class="insight pk"><strong>🎣 Poked — canal Turbo</strong>Turbo aporta ~${((GROWTH.PK_TURBO[n-2][1]/(GROWTH.PK_REG[n-2][1]+GROWTH.PK_TURBO[n-2][1]))*100).toFixed(0)}% de las órdenes totales de Poked. Alto desempeño en tiempos de entrega.</div>`,
+    `<div class="insight nk"><strong>🌿 Noah's — crecimiento sostenido</strong>Noah's GK creció ${deltaPct(nkTot[n-2],nkTot[0]).txt} desde ${MESES[0]} hasta ${MESES[n-2]}. Tendencia ascendente en VC mensual.</div>`,
+    `<div class="insight pk"><strong>📉 CVR combinado</strong>CVR promedio ${(pkCVR.slice(0,-1).reduce((a,b)=>a+b,0)/5).toFixed(1)}% (Poked) vs ${(nkCVR.slice(0,-1).reduce((a,b)=>a+b,0)/5).toFixed(1)}% (Noah's). Hay oportunidad de mejora en conversión.</div>`,
+    `<div class="insight"><strong>📊 Mix de marcas</strong>Poked representa ~${((pkVC.slice(0,-1).reduce((a,b)=>a+b,0)/(pkVC.slice(0,-1).reduce((a,b)=>a+b,0)+nkVC.slice(0,-1).reduce((a,b)=>a+b,0))*100).toFixed(0))}% del VC total acumulado del portafolio.</div>`,
+  ].join('');
+
+  new Chart(document.getElementById('chart-ov-ordenes'),{type:'bar',data:{labels:MESES,datasets:[
+    {label:'Poked',data:pkTot,backgroundColor:'#00c9ff66',borderColor:'#00c9ff',borderWidth:1,borderRadius:3},
+    {label:"Noah's GK",data:nkTot,backgroundColor:'#4ade8066',borderColor:'#4ade80',borderWidth:1,borderRadius:3}
+  ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true}}}});
+
+  new Chart(document.getElementById('chart-ov-vc'),{type:'bar',data:{labels:MESES,datasets:[
+    {label:'Poked VC (USD)',data:pkVC,backgroundColor:'#00c9ff66',borderColor:'#00c9ff',borderWidth:1,borderRadius:3},
+    {label:"Noah's VC (USD)",data:nkVC,backgroundColor:'#4ade8066',borderColor:'#4ade80',borderWidth:1,borderRadius:3}
+  ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true,ticks:{...CO.scales.y.ticks,callback:v=>v>=1000?'$'+(v/1000).toFixed(0)+'K':'$'+v}}}}});
+
+  new Chart(document.getElementById('chart-ov-trafico'),{type:'bar',data:{labels:MESES,datasets:[
+    {label:'Poked SS',data:pkSS,backgroundColor:'#00c9ff44',borderColor:'#00c9ff',borderWidth:1,borderRadius:3},
+    {label:"Noah's SS",data:nkSS,backgroundColor:'#4ade8044',borderColor:'#4ade80',borderWidth:1,borderRadius:3}
+  ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true,ticks:{...CO.scales.y.ticks,callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v}}}}});
+
+  new Chart(document.getElementById('chart-ov-cvr'),{type:'line',data:{labels:MESES,datasets:[
+    {label:'CVR Poked %',data:pkCVR.map(v=>+v.toFixed(2)),borderColor:'#00c9ff',backgroundColor:'#00c9ff22',fill:false,tension:0.4,pointRadius:4,borderWidth:2},
+    {label:"CVR Noah's %",data:nkCVR.map(v=>+v.toFixed(2)),borderColor:'#4ade80',backgroundColor:'#4ade8022',fill:false,tension:0.4,pointRadius:4,borderWidth:2}
+  ]},options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,ticks:{...CO.scales.y.ticks,callback:v=>v+'%'}}}}});
+
+  // Table
+  let rows='';
+  MESES.forEach((mes,i)=>{
+    const brands=[
+      {name:'Poked Regular',d:GROWTH.PK_REG[i],brand:'PK'},
+      {name:'Poked Turbo',d:GROWTH.PK_TURBO[i],brand:'PK'},
+      {name:"Noah's Regular",d:GROWTH.NK_REG[i],brand:'NK'},
+      {name:"Noah's Turbo",d:GROWTH.NK_TURBO[i],brand:'NK'},
+    ];
+    brands.forEach(b=>{
+      const [,ord,usr,vc,ss,op,mkd]=b.d;
+      const cvrVal=ss>0?(op/ss*100).toFixed(1):'-';
+      const cls=b.brand==='PK'?'brand-pk':'brand-nk';
+      rows+=`<tr>
+        <td>${mes}</td>
+        <td><span class="tag ${cls}">${b.name}</span></td>
+        <td class="right">${ord.toLocaleString()}</td>
+        <td class="right">${usr.toLocaleString()}</td>
+        <td class="right">$${vc.toLocaleString()}</td>
+        <td class="right">${ss.toLocaleString()}</td>
+        <td class="right">${op.toLocaleString()}</td>
+        <td class="right">${cvrVal}%</td>
+        <td class="right">${mkd>0?'$'+mkd.toLocaleString():'—'}</td>
+      </tr>`;
+    });
+  });
+  document.getElementById('tbody-overview').innerHTML=rows;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  TAB 2 — POKED
+// ══════════════════════════════════════════════════════════════════
+function renderPoked(){
+  const n=MESES.length;
+  const reg=GROWTH.PK_REG, turbo=GROWTH.PK_TURBO;
+  const totOrd=MESES.map((_,i)=>reg[i][1]+turbo[i][1]);
+  const totVC =MESES.map((_,i)=>reg[i][3]+turbo[i][3]);
+
+  const last=n-1, prev=n-2;
+  const dOrd=deltaPct(totOrd[last],totOrd[prev]);
+  const dVC =deltaPct(totVC[last],totVC[prev]);
+
+  document.getElementById('kpis-poked').innerHTML=[
+    kpi('Órdenes '+MESES[last], fmtN(totOrd[last]), dOrd.txt+' MoM', dOrd.cls),
+    kpi('VC '+MESES[last], fmtUSD(totVC[last]), dVC.txt+' MoM', dVC.cls),
+    kpi('CVR Regular', cvr(reg[last][5],reg[last][4])+'%', MESES[last], reg[last][4]>0&&(reg[last][5]/reg[last][4]*100)>=15?'pos':'neu'),
+    kpi('CVR Turbo', cvr(turbo[last][5],turbo[last][4])+'%', MESES[last], turbo[last][4]>0&&(turbo[last][5]/turbo[last][4]*100)>=15?'pos':'neu'),
+    kpi('Usuarios (Regular)', fmtN(reg[last][2]), MESES[last], 'pk'),
+    kpi('MKD Regular', reg[last][6]>0?fmtUSD(reg[last][6]):'Sin mkd', MESES[last], reg[last][6]>0?'neu':'acc'),
+  ].join('');
+
+  new Chart(document.getElementById('chart-pk-ordenes'),{type:'bar',data:{labels:MESES,datasets:[
+    {label:'Regular',data:reg.map(r=>r[1]),backgroundColor:'#00c9ff55',borderColor:'#00c9ff',borderWidth:1,borderRadius:3},
+    {label:'Turbo',data:turbo.map(r=>r[1]),backgroundColor:'#7c83fd55',borderColor:'#7c83fd',borderWidth:1,borderRadius:3}
+  ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true}}}});
+
+  new Chart(document.getElementById('chart-pk-vc'),{type:'bar',data:{labels:MESES,datasets:[
+    {label:'VC Regular (USD)',data:reg.map(r=>r[3]),backgroundColor:'#00c9ff55',borderColor:'#00c9ff',borderWidth:1,borderRadius:3},
+    {label:'VC Turbo (USD)',data:turbo.map(r=>r[3]),backgroundColor:'#7c83fd55',borderColor:'#7c83fd',borderWidth:1,borderRadius:3}
+  ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true,ticks:{...CO.scales.y.ticks,callback:v=>v>=1000?'$'+(v/1000).toFixed(0)+'K':'$'+v}}}}});
+
+  new Chart(document.getElementById('chart-pk-trafico'),{type:'bar',data:{labels:MESES,datasets:[
+    {label:'SS Regular',data:reg.map(r=>r[4]),backgroundColor:'#00c9ff44',borderColor:'#00c9ff',borderWidth:1,borderRadius:3},
+    {label:'SS Turbo',data:turbo.map(r=>r[4]),backgroundColor:'#ff9a3c44',borderColor:'#ff9a3c',borderWidth:1,borderRadius:3}
+  ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true,ticks:{...CO.scales.y.ticks,callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v}}}}});
+
+  new Chart(document.getElementById('chart-pk-cvr'),{type:'line',data:{labels:MESES,datasets:[
+    {label:'CVR Regular %',data:reg.map(r=>r[4]>0?+(r[5]/r[4]*100).toFixed(2):0),borderColor:'#00c9ff',backgroundColor:'#00c9ff22',fill:false,tension:0.4,pointRadius:4,borderWidth:2},
+    {label:'CVR Turbo %',data:turbo.map(r=>r[4]>0?+(r[5]/r[4]*100).toFixed(2):0),borderColor:'#7c83fd',backgroundColor:'#7c83fd22',fill:false,tension:0.4,pointRadius:4,borderWidth:2}
+  ]},options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,ticks:{...CO.scales.y.ticks,callback:v=>v+'%'}}}}});
+
+  let rows='';
+  [[reg,'Regular'],[turbo,'Turbo']].forEach(([src,canal])=>{
+    src.forEach((r,i)=>{
+      const [mes,ord,usr,vc,ss,op,mkd]=r;
+      const prev_r=i>0?src[i-1]:null;
+      const dOrdR=prev_r?deltaPct(ord,prev_r[1]):{txt:'—',cls:'neu'};
+      rows+=`<tr>
+        <td>${mes}</td>
+        <td><span class="tag tag-pk">${canal}</span></td>
+        <td class="right">${ord.toLocaleString()}</td>
+        <td class="right ${dOrdR.cls}">${dOrdR.txt}</td>
+        <td class="right">${usr.toLocaleString()}</td>
+        <td class="right">$${vc.toLocaleString()}</td>
+        <td class="right">${ss.toLocaleString()}</td>
+        <td class="right">${op.toLocaleString()}</td>
+        <td class="right">${ss>0?(op/ss*100).toFixed(1):'-'}%</td>
+        <td class="right">${mkd>0?'$'+mkd.toLocaleString():'—'}</td>
+      </tr>`;
+    });
+  });
+  document.getElementById('tbody-poked').innerHTML=rows;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  TAB 3 — NOAH'S
+// ══════════════════════════════════════════════════════════════════
+function renderNoahs(){
+  const n=MESES.length;
+  const reg=GROWTH.NK_REG, turbo=GROWTH.NK_TURBO;
+  const totOrd=MESES.map((_,i)=>reg[i][1]+turbo[i][1]);
+  const totVC =MESES.map((_,i)=>reg[i][3]+turbo[i][3]);
+
+  const last=n-1, prev=n-2;
+  const dOrd=deltaPct(totOrd[last],totOrd[prev]);
+  const dVC =deltaPct(totVC[last],totVC[prev]);
+
+  document.getElementById('kpis-noahs').innerHTML=[
+    kpi('Órdenes '+MESES[last], fmtN(totOrd[last]), dOrd.txt+' MoM', dOrd.cls),
+    kpi('VC '+MESES[last], fmtUSD(totVC[last]), dVC.txt+' MoM', dVC.cls),
+    kpi('CVR Regular', cvr(reg[last][5],reg[last][4])+'%', MESES[last], reg[last][4]>0&&(reg[last][5]/reg[last][4]*100)>=15?'pos':'neu'),
+    kpi('CVR Turbo', cvr(turbo[last][5],turbo[last][4])+'%', MESES[last], turbo[last][4]>0&&(turbo[last][5]/turbo[last][4]*100)>=15?'pos':'neu'),
+    kpi('Usuarios (Regular)', fmtN(reg[last][2]), MESES[last], 'nk'),
+    kpi('MKD Regular', reg[last][6]>0?fmtUSD(reg[last][6]):'Sin mkd', MESES[last], reg[last][6]>0?'neu':'acc'),
+  ].join('');
+
+  new Chart(document.getElementById('chart-nk-ordenes'),{type:'bar',data:{labels:MESES,datasets:[
+    {label:'Regular',data:reg.map(r=>r[1]),backgroundColor:'#4ade8055',borderColor:'#4ade80',borderWidth:1,borderRadius:3},
+    {label:'Turbo',data:turbo.map(r=>r[1]),backgroundColor:'#a78bfa55',borderColor:'#a78bfa',borderWidth:1,borderRadius:3}
+  ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true}}}});
+
+  new Chart(document.getElementById('chart-nk-vc'),{type:'bar',data:{labels:MESES,datasets:[
+    {label:'VC Regular (USD)',data:reg.map(r=>r[3]),backgroundColor:'#4ade8055',borderColor:'#4ade80',borderWidth:1,borderRadius:3},
+    {label:'VC Turbo (USD)',data:turbo.map(r=>r[3]),backgroundColor:'#a78bfa55',borderColor:'#a78bfa',borderWidth:1,borderRadius:3}
+  ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true,ticks:{...CO.scales.y.ticks,callback:v=>v>=1000?'$'+(v/1000).toFixed(0)+'K':'$'+v}}}}});
+
+  new Chart(document.getElementById('chart-nk-trafico'),{type:'bar',data:{labels:MESES,datasets:[
+    {label:'SS Regular',data:reg.map(r=>r[4]),backgroundColor:'#4ade8044',borderColor:'#4ade80',borderWidth:1,borderRadius:3},
+    {label:'SS Turbo',data:turbo.map(r=>r[4]),backgroundColor:'#a78bfa44',borderColor:'#a78bfa',borderWidth:1,borderRadius:3}
+  ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true,ticks:{...CO.scales.y.ticks,callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v}}}}});
+
+  new Chart(document.getElementById('chart-nk-cvr'),{type:'line',data:{labels:MESES,datasets:[
+    {label:'CVR Regular %',data:reg.map(r=>r[4]>0?+(r[5]/r[4]*100).toFixed(2):0),borderColor:'#4ade80',backgroundColor:'#4ade8022',fill:false,tension:0.4,pointRadius:4,borderWidth:2},
+    {label:'CVR Turbo %',data:turbo.map(r=>r[4]>0?+(r[5]/r[4]*100).toFixed(2):0),borderColor:'#a78bfa',backgroundColor:'#a78bfa22',fill:false,tension:0.4,pointRadius:4,borderWidth:2}
+  ]},options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,ticks:{...CO.scales.y.ticks,callback:v=>v+'%'}}}}});
+
+  let rows='';
+  [[reg,'Regular'],[turbo,'Turbo']].forEach(([src,canal])=>{
+    src.forEach((r,i)=>{
+      const [mes,ord,usr,vc,ss,op,mkd]=r;
+      const prev_r=i>0?src[i-1]:null;
+      const dOrdR=prev_r?deltaPct(ord,prev_r[1]):{txt:'—',cls:'neu'};
+      rows+=`<tr>
+        <td>${mes}</td>
+        <td><span class="tag tag-nk">${canal}</span></td>
+        <td class="right">${ord.toLocaleString()}</td>
+        <td class="right ${dOrdR.cls}">${dOrdR.txt}</td>
+        <td class="right">${usr.toLocaleString()}</td>
+        <td class="right">$${vc.toLocaleString()}</td>
+        <td class="right">${ss.toLocaleString()}</td>
+        <td class="right">${op.toLocaleString()}</td>
+        <td class="right">${ss>0?(op/ss*100).toFixed(1):'-'}%</td>
+        <td class="right">${mkd>0?'$'+mkd.toLocaleString():'—'}</td>
+      </tr>`;
+    });
+  });
+  document.getElementById('tbody-noahs').innerHTML=rows;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  TAB 4 — COMERCIAL
+// ══════════════════════════════════════════════════════════════════
+function renderComercial(){
+  const allSeries=[
+    {label:'Poked Reg',data:GROWTH.PK_REG,color:'#00c9ff'},
+    {label:'Poked Turbo',data:GROWTH.PK_TURBO,color:'#7c83fd'},
+    {label:"Noah's Reg",data:GROWTH.NK_REG,color:'#4ade80'},
+    {label:"Noah's Turbo",data:GROWTH.NK_TURBO,color:'#a78bfa'},
+  ];
+
+  new Chart(document.getElementById('chart-com-usuarios'),{type:'line',data:{labels:MESES,datasets:
+    allSeries.map(s=>({label:s.label,data:s.data.map(r=>r[2]),borderColor:s.color,backgroundColor:s.color+'22',fill:false,tension:0.4,pointRadius:3,borderWidth:2}))
+  },options:CO});
+
+  new Chart(document.getElementById('chart-com-mkd'),{type:'bar',data:{labels:MESES,datasets:
+    allSeries.slice(0,2).map(s=>({label:s.label,data:s.data.map(r=>r[6]),backgroundColor:s.color+'66',borderColor:s.color,borderWidth:1,borderRadius:3}))
+  },options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,ticks:{...CO.scales.y.ticks,callback:v=>'$'+v}}}}});
+
+  const aovDS=allSeries.map(s=>({
+    label:s.label,
+    data:s.data.map(r=>r[1]>0?+(r[3]/r[1]).toFixed(2):0),
+    borderColor:s.color,backgroundColor:s.color+'22',fill:false,tension:0.4,pointRadius:3,borderWidth:2
+  }));
+  new Chart(document.getElementById('chart-com-aov'),{type:'line',data:{labels:MESES,datasets:aovDS},
+    options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,ticks:{...CO.scales.y.ticks,callback:v=>'$'+v}}}}});
+
+  let rows='';
+  MESES.forEach((mes,i)=>{
+    const brands=[
+      {name:'Poked',canal:'Regular',d:GROWTH.PK_REG[i],brand:'PK'},
+      {name:'Poked',canal:'Turbo',  d:GROWTH.PK_TURBO[i],brand:'PK'},
+      {name:"Noah's GK",canal:'Regular',d:GROWTH.NK_REG[i],brand:'NK'},
+      {name:"Noah's GK",canal:'Turbo',  d:GROWTH.NK_TURBO[i],brand:'NK'},
+    ];
+    brands.forEach(b=>{
+      const [,ord,usr,vc,ss,op,mkd]=b.d;
+      const aovVal=ord>0?(vc/ord).toFixed(2):'—';
+      const cvrVal=ss>0?(op/ss*100).toFixed(1):'-';
+      const cls=b.brand==='PK'?'brand-pk':'brand-nk';
+      rows+=`<tr>
+        <td>${mes}</td>
+        <td><span class="tag ${cls}">${b.name}</span></td>
+        <td>${b.canal}</td>
+        <td class="right">${ord.toLocaleString()}</td>
+        <td class="right">${usr.toLocaleString()}</td>
+        <td class="right">$${vc.toLocaleString()}</td>
+        <td class="right">$${aovVal}</td>
+        <td class="right">${ss.toLocaleString()}</td>
+        <td class="right">${cvrVal}%</td>
+        <td class="right">${mkd>0?'$'+mkd.toLocaleString():'—'}</td>
+      </tr>`;
+    });
+  });
+  document.getElementById('tbody-comercial').innerHTML=rows;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  TAB 5 — OPERATIVA
+// ══════════════════════════════════════════════════════════════════
+let opsFilter='all';
+let opsCharts=[];
+
+function filterOps(f,btn){
+  opsFilter=f;
+  document.querySelectorAll('.ops-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOpsCharts();
+}
+
+function renderOpsCharts(){
+  opsCharts.forEach(c=>c.destroy());
+  opsCharts=[];
+
+  const stores=OPS.filter(s=>{
+    if(opsFilter==='all')return true;
+    if(opsFilter==='PK')return s.brand==='PK'||s.brand==='PK_TURBO';
+    if(opsFilter==='NK')return s.brand==='NK'||s.brand==='NK_TURBO';
+    if(opsFilter==='turbo')return s.brand==='PK_TURBO'||s.brand==='NK_TURBO';
+    return true;
+  });
+
+  const colors=['#00c9ff','#7c83fd','#4ade80','#a78bfa'];
+  function ds(stores,metricIdx,col){
+    return stores.map((s,i)=>({
+      label:s.name,
+      data:s.monthly.map(m=>m[metricIdx]),
+      borderColor:colors[i%colors.length],
+      backgroundColor:colors[i%colors.length]+'33',
+      fill:false,tension:0.4,pointRadius:3,borderWidth:2
+    }));
+  }
+  function barDS(stores,metricIdx){
+    return stores.map((s,i)=>({
+      label:s.name,
+      data:s.monthly.map(m=>m[metricIdx]),
+      backgroundColor:colors[i%colors.length]+'66',
+      borderColor:colors[i%colors.length],borderWidth:1,borderRadius:3
+    }));
+  }
+
+  const labels=stores.length>0?stores[0].monthly.map(m=>m[0]):MESES;
+
+  opsCharts.push(new Chart(document.getElementById('chart-ops-defect'),{
+    type:'line',data:{labels,datasets:ds(stores,2)},
+    options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,ticks:{...CO.scales.y.ticks,callback:v=>v+'%'}}}}}));
+
+  opsCharts.push(new Chart(document.getElementById('chart-ops-ava'),{
+    type:'line',data:{labels,datasets:ds(stores,4)},
+    options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,min:0.8,ticks:{...CO.scales.y.ticks,callback:v=>(v*100).toFixed(0)+'%'}}}}}));
+
+  opsCharts.push(new Chart(document.getElementById('chart-ops-delivery'),{
+    type:'bar',data:{labels,datasets:barDS(stores,6)},
+    options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,ticks:{...CO.scales.y.ticks,callback:v=>v+' min'}}}}}));
+
+  opsCharts.push(new Chart(document.getElementById('chart-ops-cancel'),{
+    type:'line',data:{labels,datasets:ds(stores,3)},
+    options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,ticks:{...CO.scales.y.ticks,callback:v=>v+'%'}}}}}));
+
+  let rows='';
+  OPS.forEach(s=>{
+    s.monthly.forEach(([mes,ord,def,cancel,ava,cook,del])=>{
+      const defCls=def>5?'tag-red':def>3.5?'tag-yellow':'tag-green';
+      const avaCls=ava<0.90?'tag-red':ava<0.95?'tag-yellow':'tag-green';
+      const canCls=cancel>2?'tag-red':cancel>1?'tag-yellow':'tag-green';
+      const bCls=s.brand.startsWith('PK')?'brand-pk':'brand-nk';
+      rows+=`<tr>
+        <td><span class="tag ${bCls}">${s.name}</span></td>
+        <td>${mes}</td>
+        <td class="right">${ord.toLocaleString()}</td>
+        <td class="right"><span class="tag ${defCls}">${def.toFixed(1)}%</span></td>
+        <td class="right"><span class="tag ${canCls}">${cancel.toFixed(1)}%</span></td>
+        <td class="right"><span class="tag ${avaCls}">${(ava*100).toFixed(0)}%</span></td>
+        <td class="right">${cook.toFixed(1)} min</td>
+        <td class="right">${del.toFixed(1)} min</td>
+      </tr>`;
+    });
+  });
+  document.getElementById('tbody-operativa').innerHTML=rows;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  TAB 6 — CALLOUTS
+// ══════════════════════════════════════════════════════════════════
+function renderCallouts(){
+  const n=MESES.length;
+  const lastMes=MESES[n-1];
+
+  // Update titles
+  document.getElementById('callout-title-pk').textContent='🎣 Poked — Estado por canal ('+lastMes+')';
+  document.getElementById('callout-title-nk').textContent="🌿 Noah's Green Kitchen — Estado por canal ("+lastMes+')';
+
+  let totalRed=0,totalYellow=0,totalGreen=0;
+
+  function buildCard(store,growth,brand,brandCls){
+    const lastOps=store.monthly[store.monthly.length-1];
+    const [mes,ord,def,cancel,ava,cook,del]=lastOps;
+    const lastG=growth[growth.length-1];
+    const [,gOrd,,gVC,gSS,gOP,gMKD]=lastG;
+    const cvrVal=gSS>0?(gOP/gSS*100):0;
+    const prevG=growth.length>1?growth[growth.length-2]:null;
+    const dOrd=prevG?deltaPct(gOrd,prevG[1]):{txt:'—',cls:'neu'};
+    const dVC =prevG?deltaPct(gVC, prevG[3]):{txt:'—',cls:'neu'};
+
+    const defDot=def>5?'tl-dot-red':def>3.5?'tl-dot-yellow':'tl-dot-green';
+    const avaDot=ava<0.90?'tl-dot-red':ava<0.95?'tl-dot-yellow':'tl-dot-green';
+    const cvrDot=cvrVal<10?'tl-dot-red':cvrVal<15?'tl-dot-yellow':'tl-dot-green';
+    const canDot=cancel>2?'tl-dot-red':cancel>1?'tl-dot-yellow':'tl-dot-green';
+
+    const defCls=def>5?'tl-red':def>3.5?'tl-yellow':'tl-green';
+    const avaCls=ava<0.90?'tl-red':ava<0.95?'tl-yellow':'tl-green';
+    const cvrCls=cvrVal<10?'tl-red':cvrVal<15?'tl-yellow':'tl-green';
+    const canCls=cancel>2?'tl-red':cancel>1?'tl-yellow':'tl-green';
+
+    const status=colorStatus(def,ava,cvrVal,cancel);
+    if(status==='alert-red')totalRed++;
+    else if(status==='alert-yellow')totalYellow++;
+    else totalGreen++;
+
+    return`<div class="callout-card ${status}">
+      <div class="callout-header">
+        <div>
+          <div class="callout-store">${store.name}</div>
+          <div style="font-size:11px;color:var(--sub);margin-top:2px">ID: ${store.id} · ${mes}</div>
+        </div>
+        <span class="tag ${brandCls}">${brand}</span>
+      </div>
+      <div class="tl-grid">
+        <div class="tl-metric"><div class="tl-label">Defect Rate</div><div class="tl-value ${defCls}">${def.toFixed(1)}%</div><div class="tl-trend"><span class="tl-dot ${defDot}"></span>${def>5?'🔴 Crítico':def>3.5?'🟡 Atención':'🟢 OK'}</div></div>
+        <div class="tl-metric"><div class="tl-label">AVA</div><div class="tl-value ${avaCls}">${(ava*100).toFixed(0)}%</div><div class="tl-trend"><span class="tl-dot ${avaDot}"></span>${ava<0.90?'🔴 Crítico':ava<0.95?'🟡 Atención':'🟢 OK'}</div></div>
+        <div class="tl-metric"><div class="tl-label">CVR</div><div class="tl-value ${cvrCls}">${cvrVal.toFixed(1)}%</div><div class="tl-trend"><span class="tl-dot ${cvrDot}"></span>${cvrVal<10?'🔴 Bajo':cvrVal<15?'🟡 Medio':'🟢 OK'}</div></div>
+        <div class="tl-metric"><div class="tl-label">Cancel Rate</div><div class="tl-value ${canCls}">${cancel.toFixed(1)}%</div><div class="tl-trend"><span class="tl-dot ${canDot}"></span>${cancel>2?'🔴 Alto':cancel>1?'🟡 Atención':'🟢 OK'}</div></div>
+      </div>
+      <div class="callout-section">
+        <div class="callout-section-title">Comercial</div>
+        <div class="callout-item">Órdenes: <strong>${gOrd.toLocaleString()}</strong> <span class="${dOrd.cls}">${dOrd.txt} MoM</span></div>
+        <div class="callout-item">VC: <strong>$${gVC.toLocaleString()} USD</strong> <span class="${dVC.cls}">${dVC.txt} MoM</span></div>
+        <div class="callout-item">Sesiones: <strong>${gSS.toLocaleString()}</strong> · OP: <strong>${gOP.toLocaleString()}</strong></div>
+        ${gMKD>0?`<div class="callout-item">MKD activo: <strong>$${gMKD.toLocaleString()} USD</strong></div>`:''}
+      </div>
+      <div class="callout-section">
+        <div class="callout-section-title">Ops</div>
+        <div class="callout-item">Tiempos: Cocina <strong>${cook.toFixed(0)} min</strong> · Entrega <strong>${del.toFixed(0)} min</strong></div>
+        <div class="callout-item">Órdenes ops: <strong>${ord.toLocaleString()}</strong></div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('callout-cards-pk').innerHTML=[
+    buildCard(OPS[0],GROWTH.PK_REG,'Poked Regular','brand-pk'),
+    buildCard(OPS[1],GROWTH.PK_TURBO,'Poked Turbo','brand-pk'),
+  ].join('');
+  document.getElementById('callout-cards-nk').innerHTML=[
+    buildCard(OPS[2],GROWTH.NK_REG,"Noah's Regular",'brand-nk'),
+    buildCard(OPS[3],GROWTH.NK_TURBO,"Noah's Turbo",'brand-nk'),
+  ].join('');
+
+  document.getElementById('kpis-callouts').innerHTML=[
+    kpi('Tiendas en 🔴', totalRed, 'Requieren acción inmediata', totalRed>0?'neg':'pos'),
+    kpi('Tiendas en 🟡', totalYellow, 'Bajo vigilancia', totalYellow>0?'neu':'pos'),
+    kpi('Tiendas en 🟢', totalGreen, 'Sin alertas críticas', 'pos'),
+    kpi('Última actualización', UPDATED_AT, 'Automática vía GitHub Actions', 'acc'),
+  ].join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════════
+renderOverview();
+renderPoked();
+renderNoahs();
+renderComercial();
+renderOpsCharts();
+renderCallouts();
+</script>
+</body>
+</html>
