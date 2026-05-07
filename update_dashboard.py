@@ -16,9 +16,17 @@ USO EN CI (GitHub Actions):
 
 import os
 import re
+import sys
 import json
 import datetime
 from pathlib import Path
+
+# Forzar UTF-8 en stdout desde el arranque (Windows cp1252 fix)
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 # ── Snowflake ────────────────────────────────────────────────────
 try:
@@ -26,7 +34,7 @@ try:
     SF_AVAILABLE = True
 except ImportError:
     SF_AVAILABLE = False
-    print("⚠️  snowflake-connector-python no instalado. Usando datos demo.")
+    print("[WARN] snowflake-connector-python no instalado. Usando datos demo.")
 
 # ══════════════════════════════════════════════════════════════════
 #  CONFIG
@@ -177,7 +185,7 @@ def build_meses(growth_rows):
 
 def demo_data():
     """Devuelve datos demo cuando no hay conexión a Snowflake."""
-    print("📋 Usando datos demo (sin conexión a Snowflake)")
+    print("[INFO] Usando datos demo (sin conexion a Snowflake)")
     meses = ["Nov 2025","Dic 2025","Ene 2026","Feb 2026","Mar 2026","Abr 2026*"]
     growth = {
         "PK_REG":   [["Nov 2025",1820,1780,18450,11200,2010,0],["Dic 2025",2450,2380,24800,15600,2710,320],["Ene 2026",2980,2890,30200,18900,3290,480],["Feb 2026",3210,3120,32500,20400,3540,560],["Mar 2026",3580,3470,36200,22800,3950,620],["Abr 2026*",2100,2040,21300,14600,2320,380]],
@@ -203,12 +211,12 @@ def fetch_from_snowflake():
     conn = get_connection()
     cur = conn.cursor()
     try:
-        print("📡 Consultando FOLLOW_UP_GROWTH_METRICS_DIMENSIONS...")
+        print("[INFO] Consultando FOLLOW_UP_GROWTH_METRICS_DIMENSIONS...")
         growth_rows = run_query(cur, GROWTH_QUERY.format(
             ids=ids_str, months_back=MONTHS_BACK))
         print(f"   {len(growth_rows):,} filas growth")
 
-        print("📡 Consultando FOLLOW_UP_OPS_METRICS...")
+        print("[INFO] Consultando FOLLOW_UP_OPS_METRICS...")
         ops_rows = run_query(cur, OPS_QUERY.format(
             ids=ids_str, months_back=MONTHS_BACK))
         print(f"   {len(ops_rows):,} filas ops")
@@ -251,7 +259,7 @@ def inject(html: str, meses, growth, ops, updated_at: str) -> str:
         replacement = rf'\g<1>{value_js}\g<3>'
         new_html, count = re.subn(pattern, replacement, html, count=1)
         if count == 0:
-            print(f"⚠️  No se encontró const {name} en el HTML")
+            print(f"[WARN] No se encontro const {name} en el HTML")
         return new_html
 
     def replace_multiline_const(html, name, value_js):
@@ -260,7 +268,7 @@ def inject(html: str, meses, growth, ops, updated_at: str) -> str:
         replacement = rf'\g<1>{value_js}\g<2>'
         new_html, count = re.subn(pattern, replacement, html, count=1, flags=re.DOTALL)
         if count == 0:
-            print(f"⚠️  No se encontró const {name} (multiline) en el HTML")
+            print(f"[WARN] No se encontro const {name} (multiline) en el HTML")
         return new_html
 
     def replace_ops_array(html, value_js):
@@ -268,7 +276,7 @@ def inject(html: str, meses, growth, ops, updated_at: str) -> str:
         replacement = rf'\g<1>{value_js}\g<2>'
         new_html, count = re.subn(pattern, replacement, html, count=1, flags=re.DOTALL)
         if count == 0:
-            print("⚠️  No se encontró const OPS en el HTML")
+            print("[WARN] No se encontro const OPS en el HTML")
         return new_html
 
     html = replace_const(html, "UPDATED_AT", f'"{updated_at}"')
@@ -292,9 +300,22 @@ def inject(html: str, meses, growth, ops, updated_at: str) -> str:
 #  MAIN
 # ══════════════════════════════════════════════════════════════════
 
+def log(msg):
+    """Print con soporte UTF-8 en Windows y Linux."""
+    print(msg.encode("utf-8", errors="replace").decode(
+        "utf-8" if hasattr(sys.stdout, "reconfigure") else "ascii", errors="replace"))
+
+
 def main():
+    # Forzar UTF-8 en stdout (Python 3.7+)
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+
     updated_at = datetime.date.today().isoformat()
-    print(f"\n🚀 update_dashboard.py — {updated_at}")
+    print(f"\n[OK] update_dashboard.py — {updated_at}")
 
     has_env = all(os.environ.get(k) for k in
                   ["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"])
@@ -303,23 +324,23 @@ def main():
         meses, growth, ops = fetch_from_snowflake()
     else:
         if not has_env:
-            print("⚠️  Variables de entorno de Snowflake no encontradas.")
+            print("[WARN] Variables de entorno de Snowflake no encontradas. Usando datos demo.")
         meses, growth, ops = demo_data()
 
-    print(f"\n📝 Leyendo template: {TEMPLATE_PATH}")
+    print(f"\n[INFO] Leyendo template: {TEMPLATE_PATH}")
     html = TEMPLATE_PATH.read_text(encoding="utf-8")
 
-    print("💉 Inyectando datos...")
+    print("[INFO] Inyectando datos...")
     html = inject(html, meses, growth, ops, updated_at)
 
-    print(f"💾 Escribiendo: {OUTPUT_PATH}")
+    print(f"[INFO] Escribiendo: {OUTPUT_PATH}")
     OUTPUT_PATH.write_text(html, encoding="utf-8")
 
     size_kb = OUTPUT_PATH.stat().st_size / 1024
-    print(f"\n✅ Dashboard actualizado — {size_kb:.0f} KB")
-    print(f"   Fecha:    {updated_at}")
-    print(f"   Meses:    {len(meses)}  ({meses[0]} → {meses[-1]})")
-    print(f"   Partners: {', '.join(str(v) for v in PARTNER_IDS.values())}")
+    print(f"\n[OK] Dashboard actualizado — {size_kb:.0f} KB")
+    print(f"     Fecha:    {updated_at}")
+    print(f"     Meses:    {len(meses)}  ({meses[0]} -> {meses[-1]})")
+    print(f"     Partners: {', '.join(str(v) for v in PARTNER_IDS.values())}")
 
 
 if __name__ == "__main__":
