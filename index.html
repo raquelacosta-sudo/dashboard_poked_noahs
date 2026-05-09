@@ -394,6 +394,7 @@ footer{text-align:center;padding:14px;color:#9CA3AF;font-size:11px}
         <div id="selectedBrandTags" style="display:flex;flex-wrap:wrap;gap:5px;min-height:10px"></div>
       </div>
     </div>
+    <div id="brandLwTable" style="margin-bottom:14px"></div>
     <div id="brandMeta" class="brand-meta" style="display:none"></div>
     <div id="brandChartsWrap" class="brand-charts-grid"></div>
   </div>
@@ -440,6 +441,7 @@ footer{text-align:center;padding:14px;color:#9CA3AF;font-size:11px}
       <option value="">Todos los KAMs</option>
     </select>
   </div>
+  <div id="kamLwTable" style="margin-bottom:14px"></div>
   <div id="tendContent"></div>
 </div>
 
@@ -1434,6 +1436,31 @@ function renderBrandDetail(){
       borderWidth:2, pointRadius:0, tension:.3
     }]);
   });
+
+  // === LW KPI Table ===
+  const lwDiv=document.getElementById('brandLwTable');
+  if(lwDiv && _selectedBrands.length){
+    const fM2=v=>'$'+(Math.abs(v)/1e3).toFixed(0)+'K';
+    const fN2=v=>v>1e6?(v/1e6).toFixed(2)+'M':v>1e3?(v/1e3).toFixed(0)+'K':String(Math.round(v||0));
+    const headers=['Marca','Ventas','Órdenes','AOV','Tráfico SS','CVR%','MKD Ally%','MKD Pro%','Bookings','Revenue','%Cancel','%Defect'];
+    const fields=['ventas','ordenes','aov','trafico_ss','cvr_pct','pct_markdown_ally','pct_markdown_pro_ally','bookings_ads','revenue_ads','pct_cancelaciones','pct_defectos'];
+    let html='<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #FFE6DD;box-shadow:0 2px 10px rgba(0,0,0,.06);overflow-x:auto"><div style="font-size:13px;font-weight:900;color:#1A1A2E;margin-bottom:8px;letter-spacing:-.2px">📋 KPIs LW ('+(DATA.last_week_str||'')+')</div><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>'+headers.map(h=>'<th style="text-align:left;padding:6px;background:#fff0dd;color:#633D11;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.5px">'+h+'</th>').join('')+'</tr></thead><tbody>';
+    _selectedBrands.forEach((bn,bi)=>{
+      const bd=DATA.brand_data[bn];
+      if(!bd) return;
+      const c=_BRAND_COLORS[bi%_BRAND_COLORS.length];
+      const cells=[bn];
+      fields.forEach(f=>{
+        const arr=bd[f]; const v=arr&&arr.length?arr[arr.length-1]:0;
+        if(['ventas','aov','bookings_ads','revenue_ads'].includes(f)) cells.push(fM2(v));
+        else if(['ordenes','trafico_ss'].includes(f)) cells.push(fN2(v));
+        else cells.push((v||0).toFixed(2)+'%');
+      });
+      html+='<tr style="border-bottom:1px solid #F3F4F6">'+cells.map((cell,k)=>'<td style="padding:6px;'+(k===0?'border-left:3px solid '+c+';font-weight:700;color:#1A1A2E':'color:#374151')+'">'+cell+'</td>').join('')+'</tr>';
+    });
+    html+='</tbody></table></div>';
+    lwDiv.innerHTML=html;
+  }
 }
 function goBrand(brand){
   showTab('marca_detalle',document.querySelectorAll('.tab')[1]);
@@ -1593,6 +1620,37 @@ function renderTendencias(){
       mkChart(cid,'line',labels,datasets);
     });
   },50);
+
+  // === KAM LW KPI Table ===
+  const kamLwDiv=document.getElementById('kamLwTable');
+  if(kamLwDiv && kamsToShow.length){
+    const fM2=v=>'$'+(Math.abs(v)/1e3).toFixed(0)+'K';
+    const fN2=v=>v>1e6?(v/1e6).toFixed(2)+'M':v>1e3?(v/1e3).toFixed(0)+'K':String(Math.round(v||0));
+    const headers=['KAM','Ventas','Órdenes','AOV','Tráfico','CVR%','MKD Ally%','MKD Pro%','Bookings','Revenue','%Cancel','%Defect'];
+    let html='<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #FFE6DD;box-shadow:0 2px 10px rgba(0,0,0,.06);overflow-x:auto"><div style="font-size:13px;font-weight:900;color:#1A1A2E;margin-bottom:8px;letter-spacing:-.2px">📋 KPIs LW por KAM ('+(DATA.last_week_str||'')+')</div><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>'+headers.map(h=>'<th style="text-align:left;padding:6px;background:#fff0dd;color:#633D11;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.5px">'+h+'</th>').join('')+'</tr></thead><tbody>';
+    kamsToShow.forEach(({lider,kam,color})=>{
+      const kr=DATA.kam_rows.find(r=>r.lider===lider&&r.kam===kam);
+      if(!kr||!kr.lw) return;
+      const lw=kr.lw;
+      const cells=[
+        kam,
+        fM2(lw.ventas||0),
+        fN2(lw.ordenes||0),
+        '$'+(lw.aov||0).toFixed(0),
+        fN2(lw.trafico||0),
+        (lw.cvr||0).toFixed(2)+'%',
+        (lw.mkd_ally||0).toFixed(2)+'%',
+        (lw.mkd_pro||0).toFixed(2)+'%',
+        fM2(lw.bookings_ads||0),
+        fM2(lw.revenue_ads||0),
+        (lw.pct_cancel||0).toFixed(2)+'%',
+        (lw.pct_defecto||0).toFixed(2)+'%'
+      ];
+      html+='<tr style="border-bottom:1px solid #F3F4F6">'+cells.map((cell,k)=>'<td style="padding:6px;'+(k===0?'border-left:3px solid '+color+';font-weight:700;color:#1A1A2E':'color:#374151')+'">'+cell+'</td>').join('')+'</tr>';
+    });
+    html+='</tbody></table></div>';
+    kamLwDiv.innerHTML=html;
+  }
 }
 
 // ── MARCAS ─────────────────────────────────────────────────────────
@@ -1628,14 +1686,40 @@ function renderMarcas(){
   document.getElementById('marcaTbody').innerHTML=sl.map(r=>{
     const cp=`<span class="pill ${r.pct_cancelaciones>=6?'crit':r.pct_cancelaciones>=4?'warn':'ok'}">${fmtP(r.pct_cancelaciones)}</span>`;
     const dp=`<span class="pill ${r.pct_defectos>=4?'crit':r.pct_defectos>=2.5?'warn':'ok'}">${fmtP(r.pct_defectos)}</span>`;
+    // Compute PW deltas
+    const bd=DATA.brand_data[r.brand]||{};
+    const _last=arr=>(arr&&arr.length?arr[arr.length-1]:0);
+    const _prev=arr=>(arr&&arr.length>=2?arr[arr.length-2]:0);
+    const _delta=(a,b)=>(a||0)-(b||0);
+    const _dPct=(a,b)=>{const p=b>0?((a-b)/b*100):null; return p;};
+    const dvNom=_delta(_last(bd.ventas),_prev(bd.ventas));
+    const dvPct=_dPct(_last(bd.ventas),_prev(bd.ventas));
+    const doNom=_delta(_last(bd.ordenes),_prev(bd.ordenes));
+    const doPct=_dPct(_last(bd.ordenes),_prev(bd.ordenes));
+    const dtNom=_delta(_last(bd.trafico_ss),_prev(bd.trafico_ss));
+    const dtPct=_dPct(_last(bd.trafico_ss),_prev(bd.trafico_ss));
+    const dcvr_pp=_delta(_last(bd.cvr_pct),_prev(bd.cvr_pct));
+    const dbNom=_delta(_last(bd.bookings_ads),_prev(bd.bookings_ads));
+    const drNom=_delta(_last(bd.revenue_ads),_prev(bd.revenue_ads));
+    const dmkd_pp=_delta(_last(bd.pct_markdown_ally),_prev(bd.pct_markdown_ally));
+    const dmkd_pro_pp=_delta(_last(bd.pct_markdown_pro_ally),_prev(bd.pct_markdown_pro_ally));
+    const fmtDP=(p)=>{ if(p==null||isNaN(p)) return '<span style="color:#9CA3AF">—</span>'; const c=p>=0?'#059669':'#DC2626'; const a=p>=0?'▲':'▼'; return '<span style="color:'+c+';font-weight:700;font-size:10px">'+a+' '+Math.abs(p).toFixed(1)+'%</span>'; };
+    const fmtDN=(d)=>{ const c=d>=0?'#059669':'#DC2626'; const a=d>=0?'▲':'▼'; return '<span style="color:'+c+';font-weight:700;font-size:10px">'+a+' '+(Math.abs(d)>=1000?(Math.abs(d)/1000).toFixed(1)+'K':Math.abs(d).toFixed(0))+'</span>'; };
+    const fmtDM=(d)=>{ const c=d>=0?'#059669':'#DC2626'; const a=d>=0?'▲':'▼'; return '<span style="color:'+c+';font-weight:700;font-size:10px">'+a+' $'+(Math.abs(d)>=1000?(Math.abs(d)/1000).toFixed(1)+'K':Math.abs(d).toFixed(0))+'</span>'; };
+    const fmtPP=(d)=>{ const c=d>=0?'#059669':'#DC2626'; const a=d>=0?'▲':'▼'; return '<span style="color:'+c+';font-weight:700;font-size:10px">'+a+' '+Math.abs(d).toFixed(2)+'pp</span>'; };
+    const wrap=(val,deltaNomHtml,deltaPctHtml)=>'<div style="line-height:1.2">'+val+'<div>'+deltaNomHtml+' '+deltaPctHtml+'</div></div>';
     return`<tr>
       <td><span style="font-weight:700;cursor:pointer;color:var(--red)" onclick="goBrand('${r.brand.replace(/'/g,"\'")}')">${r.brand}</span></td>
       <td><span class="tag-lider">${LS[r.lider]||r.lider}</span></td>
       <td>${r.kam}</td>
-      <td>${fmtM(r.ventas)}</td><td>${fmtN(r.ordenes)}</td>
-      <td>${fmtN(r.trafico_ss)}</td><td>${fmtP(r.cvr_pct)}</td>
-      <td>${fmtN(r.bookings_ads)}</td><td>${fmtM(r.revenue_ads)}</td>
-      <td>${fmtP(r.pct_markdown_ally)}</td><td>${fmtP(r.pct_markdown_pro_ally)}</td>
+      <td>${wrap(fmtM(r.ventas),fmtDM(dvNom),fmtDP(dvPct))}</td>
+      <td>${wrap(fmtN(r.ordenes),fmtDN(doNom),fmtDP(doPct))}</td>
+      <td>${wrap(fmtN(r.trafico_ss),fmtDN(dtNom),fmtDP(dtPct))}</td>
+      <td>${wrap(fmtP(r.cvr_pct),fmtPP(dcvr_pp),'')}</td>
+      <td>${wrap(fmtN(r.bookings_ads),fmtDM(dbNom),'')}</td>
+      <td>${wrap(fmtM(r.revenue_ads),fmtDM(drNom),'')}</td>
+      <td>${wrap(fmtP(r.pct_markdown_ally),fmtPP(dmkd_pp),'')}</td>
+      <td>${wrap(fmtP(r.pct_markdown_pro_ally),fmtPP(dmkd_pro_pp),'')}</td>
       <td>${cp}</td><td>${dp}</td>
     </tr>`;
   }).join('');
@@ -2828,7 +2912,21 @@ function renderCaidasTable(){
     return {...b,ord_lw,ord_pw,delta_ord_lw,delta_ord_nom,nomLoss,peso};
   });
 
-  const declining=enriched.filter(b=>b.nomLoss>0).sort((a,b)=>(a.delta_lw??0)-(b.delta_lw??0));
+  // Compute streak (consecutive weeks dropping in GMV)
+  const computeStreak=(brand)=>{
+    const bd=DATA.brand_data[brand];
+    if(!bd||!bd.ventas) return 0;
+    const v=bd.ventas; let streak=0;
+    for(let k=v.length-1;k>0;k--){
+      if(v[k]<v[k-1] && v[k-1]>0) streak++;
+      else break;
+    }
+    return streak;
+  };
+  enriched.forEach(b=>{ b.streak=computeStreak(b.marca); });
+
+  // Sort por delta absoluto (mayor caída) y limit a top 5
+  const declining=enriched.filter(b=>b.nomLoss>0).sort((a,b)=>b.nomLoss-a.nomLoss).slice(0,5);
 
   if(!declining.length){
     wrap.innerHTML='<p style="color:#6B7280;font-size:13px;padding:16px">No hay caídas registradas para este KAM esta semana. 🎉</p>';
@@ -2859,7 +2957,10 @@ function renderCaidasTable(){
           <span style="font-size:14px">${medal}</span>
           <div>
             <div style="font-weight:700;color:#1F2937;font-size:12px">${b.marca}</div>
-            <div style="font-size:10px;color:#6B7280;margin-top:1px"><span style="background:#F3F4F6;border-radius:3px;padding:1px 5px">${b.peso.toFixed(1)}% cartera</span></div>
+            <div style="font-size:10px;color:#6B7280;margin-top:1px;display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+              <span style="background:#F3F4F6;border-radius:3px;padding:1px 5px">${b.peso.toFixed(1)}% cartera</span>
+              ${b.streak>=3?'<span style="background:#FEE2E2;color:#991B1B;border-radius:3px;padding:1px 5px;font-weight:700">🔥🔥🔥 '+b.streak+'ª sem cayendo</span>':b.streak===2?'<span style="background:#FEF3C7;color:#92400E;border-radius:3px;padding:1px 5px;font-weight:700">🔥🔥 2ª sem cayendo</span>':b.streak===1?'<span style="background:#FFE6DD;color:#9A3412;border-radius:3px;padding:1px 5px;font-weight:700">🔥 1ª sem cayendo</span>':''}
+            </div>
             <div style="margin-top:4px;height:4px;background:#FEE2E2;border-radius:2px;width:120px">
               <div style="height:4px;background:#DC2626;border-radius:2px;width:${barW}%"></div>
             </div>
@@ -3140,18 +3241,23 @@ function renderAdsLiderChart(){
   const week=DATA.last_week_str||'';
   const n=DATA.all_weeks.length;
   const liderMap={};
+  // Unificado: TODAS las semanas (L3W, L2W, LW) se calculan desde brand_data[*].revenue_ads
+  // para asegurar misma definición. brand_data tiene revenue_ads = REVENUE_EBITDA (USD real).
   DATA.kam_rows.forEach(r=>{
     if(!liderMap[r.lider]) liderMap[r.lider]={l3w:0,l2w:0,lw:0,fc:0,fcCount:0,kamCount:0};
     const m=liderMap[r.lider];
-    m.lw+=(r.lw&&r.lw.revenue_ads)||0;
-    m.l2w+=(r.pw&&r.pw.revenue_ads)||0;
     m.kamCount++;
     DATA.brand_list.filter(b=>(DATA.brand_meta[b]||{}).lider===r.lider&&(DATA.brand_meta[b]||{}).kam===r.kam)
       .forEach(b=>{
         const bd=DATA.brand_data[b];
-        if(bd&&bd.revenue_ads){
-          const idx3=Math.max(0,Math.min(n-3,bd.revenue_ads.length-1));
-          m.l3w+=(bd.revenue_ads[idx3]||0);
+        if(bd&&bd.revenue_ads&&bd.revenue_ads.length){
+          const len=bd.revenue_ads.length;
+          // LW = última semana (idx -1)
+          m.lw+=(bd.revenue_ads[len-1]||0);
+          // L2W = penúltima (idx -2)
+          if(len>=2) m.l2w+=(bd.revenue_ads[len-2]||0);
+          // L3W = antepenúltima (idx -3)
+          if(len>=3) m.l3w+=(bd.revenue_ads[len-3]||0);
         }
       });
     const s=fbR('ads_forecast',week,r.kam);
